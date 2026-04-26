@@ -1,0 +1,201 @@
+export const ACTIVITIES = [
+  {
+    id: 'gym',
+    name: 'Hit the Gym',
+    icon: '💪',
+    description: 'Work out to boost health and looks',
+    category: 'health',
+    minAge: 13,
+    effects: { health: [3, 6], looks: [1, 3], happiness: [1, 3] },
+    cost: 0,
+    successRate: 100
+  },
+  {
+    id: 'study',
+    name: 'Study Hard',
+    icon: '📚',
+    description: 'Hit the books to increase smarts',
+    category: 'education',
+    minAge: 5,
+    effects: { smarts: [3, 7], happiness: [-1, 1] },
+    cost: 0,
+    successRate: 100
+  },
+  {
+    id: 'meditate',
+    name: 'Meditate',
+    icon: '🧘',
+    description: 'Find inner peace and boost happiness',
+    category: 'wellness',
+    minAge: 10,
+    effects: { happiness: [5, 10], health: [1, 3] },
+    cost: 0,
+    successRate: 100
+  },
+  {
+    id: 'diet',
+    name: 'Eat Healthy',
+    icon: '🥗',
+    description: 'Improve health and looks through diet',
+    category: 'health',
+    minAge: 13,
+    effects: { health: [2, 5], looks: [1, 3] },
+    cost: 0,
+    successRate: 100
+  },
+  {
+    id: 'party',
+    name: 'Go Partying',
+    icon: '🎉',
+    description: 'Let loose! High fun, high risk',
+    category: 'social',
+    minAge: 16,
+    effects: { happiness: [5, 15], health: [-5, -2], looks: [-2, 0] },
+    cost: 50,
+    successRate: 100
+  },
+  {
+    id: 'read',
+    name: 'Read a Book',
+    icon: '📖',
+    description: 'Expand your mind with reading',
+    category: 'education',
+    minAge: 5,
+    effects: { smarts: [2, 5], happiness: [1, 4] },
+    cost: 0,
+    successRate: 100
+  },
+  {
+    id: 'volunteer',
+    name: 'Volunteer',
+    icon: '🤝',
+    description: 'Help others to boost happiness',
+    category: 'social',
+    minAge: 12,
+    effects: { happiness: [4, 8], smarts: [1, 2] },
+    cost: 0,
+    successRate: 100
+  },
+  {
+    id: 'doctor',
+    name: 'Visit Doctor',
+    icon: '🏥',
+    description: 'Preventive checkup for better health',
+    category: 'health',
+    minAge: 0,
+    effects: { health: [3, 8] },
+    cost: 150,
+    successRate: 100
+  },
+  {
+    id: 'invest',
+    name: 'Invest Money',
+    icon: '📈',
+    description: 'Invest savings. Could make or lose money.',
+    category: 'finance',
+    minAge: 18,
+    costPercent: 0.1,
+    effects: {},
+    special: 'invest',
+    successRate: 60
+  },
+  {
+    id: 'crime_petty',
+    name: 'Commit Petty Crime',
+    icon: '🎭',
+    description: 'Steal something small. High risk, quick cash.',
+    category: 'crime',
+    minAge: 13,
+    effects: { happiness: [-2, 2] },
+    special: 'crime_petty',
+    successRate: 65
+  },
+  {
+    id: 'crime_big',
+    name: 'Grand Theft',
+    icon: '💀',
+    description: 'Big heist. Massive reward or prison time.',
+    category: 'crime',
+    minAge: 18,
+    effects: {},
+    special: 'crime_big',
+    successRate: 35
+  },
+  {
+    id: 'plastic_surgery',
+    name: 'Plastic Surgery',
+    icon: '✂️',
+    description: 'Go under the knife to boost looks',
+    category: 'looks',
+    minAge: 18,
+    effects: { looks: [5, 20], happiness: [-3, 5] },
+    cost: 8000,
+    successRate: 80
+  },
+  {
+    id: 'therapy',
+    name: 'Go to Therapy',
+    icon: '🛋️',
+    description: 'Work on your mental health',
+    category: 'wellness',
+    minAge: 13,
+    effects: { happiness: [5, 12] },
+    cost: 200,
+    successRate: 100
+  },
+  {
+    id: 'travel',
+    name: 'Travel Abroad',
+    icon: '✈️',
+    description: 'See the world. Happiness boost guaranteed.',
+    category: 'lifestyle',
+    minAge: 18,
+    effects: { happiness: [8, 15], smarts: [1, 3] },
+    cost: 2000,
+    successRate: 100
+  },
+  {
+    id: 'music',
+    name: 'Learn Music',
+    icon: '🎸',
+    description: 'Pick up an instrument',
+    category: 'hobby',
+    minAge: 5,
+    effects: { happiness: [3, 7], smarts: [1, 3] },
+    cost: 50,
+    successRate: 100
+  },
+  {
+    id: 'gambling',
+    name: 'Go Gambling',
+    icon: '🎰',
+    description: 'Try your luck at the casino',
+    category: 'risk',
+    minAge: 18,
+    effects: {},
+    special: 'gambling',
+    successRate: 40
+  },
+  {
+    id: 'socialize',
+    name: 'Meet New People',
+    icon: '🗣️',
+    description: 'Build your social network',
+    category: 'social',
+    minAge: 5,
+    effects: { happiness: [2, 6] },
+    special: 'meet_friend',
+    successRate: 100
+  },
+  {
+    id: 'luxury',
+    name: 'Buy Luxury Item',
+    icon: '💎',
+    description: 'Treat yourself to something nice',
+    category: 'lifestyle',
+    minAge: 18,
+    effects: { happiness: [5, 10] },
+    cost: 5000,
+    successRate: 100
+  }
+];

@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body {
+  background-color: #0d0f1a;
+  color: #e2e8f0;
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  overscroll-behavior: none;
+}
+
+#root {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+}
+
+.phone-frame {
+  width: 100%;
+  max-width: 430px;
+  min-height: 100vh;
+  position: relative;
+  background: #0d0f1a;
+  overflow: hidden;
+}
+
+@media (min-width: 500px) {
+  #root { align-items: center; padding: 20px; background: #07080f; }
+  .phone-frame {
+    min-height: 90vh;
+    max-height: 900px;
+    border-radius: 36px;
+    border: 2px solid #252840;
+    box-shadow: 0 0 60px rgba(139,92,246,0.15), 0 40px 80px rgba(0,0,0,0.6);
+    overflow: hidden;
+  }
+}
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #252840; border-radius: 2px; }
+
+/* Stat bar animation */
+.stat-fill { transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* Button tap effect */
+.tap-effect:active { transform: scale(0.95); transition: transform 0.1s; }
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Card glow effects */
+.card-good { border-left: 3px solid #22c55e; }
+.card-bad { border-left: 3px solid #ef4444; }
+.card-neutral { border-left: 3px solid #3b82f6; }
+.card-choice { border-left: 3px solid #a855f7; }
+.card-milestone { border-left: 3px solid #f59e0b; }
+.card-crime { border-left: 3px solid #f97316; }
+.card-health { border-left: 3px solid #ec4899; }
+.card-friend { border-left: 3px solid #06b6d4; }
+
+/* Age up button glow */
+.ageup-btn {
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  box-shadow: 0 4px 24px rgba(139,92,246,0.4);
+  transition: all 0.2s;
+}
+.ageup-btn:hover { box-shadow: 0 6px 32px rgba(139,92,246,0.6); transform: translateY(-1px); }
+.ageup-btn:active { transform: scale(0.97); }
+
+/* Notification toast */
+.toast-enter { animation: slideUp 0.3s ease-out; }
+
+/* Input styling */
+input, select {
+  background: #1a1e30;
+  border: 1px solid #252840;
+  color: #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  width: 100%;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+input:focus, select:focus { border-color: #8b5cf6; }
+
+select option { background: #1a1e30; }
+
+/* Range slider */
+input[type=range] {
+  padding: 0;
+  border: none;
+  background: transparent;
+  accent-color: #8b5cf6;
+  cursor: pointer;
+}
+
+/* Loading shimmer */
+.shimmer-bg {
+  background: linear-gradient(90deg, #1a1e30 25%, #252840 50%, #1a1e30 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Character avatar ring */
+.avatar-ring {
+  box-shadow: 0 0 0 3px #8b5cf6, 0 0 20px rgba(139,92,246,0.4);
+}
+
+/* Tab active indicator */
+.tab-active { color: #8b5cf6; }
+.tab-inactive { color: #64748b; }
