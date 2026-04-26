@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { randomName } from '../data/names';
-import { getEventsForAge } from '../data/events';
+import { getEventsForAge, getConsequenceEvents } from '../data/events';
 import { getCountry } from '../data/countries';
 import { CAREER_TRACKS } from '../data/careers';
 import {
@@ -492,23 +492,50 @@ function pickDegree() {
 function generateYearEvents(char) {
   const pool = getEventsForAge(char.age, char);
   if (!pool || pool.length === 0) return [];
-  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+
+  // Weighted random pick using _weight from life-stage scoring
+  function weightedPick(arr, used) {
+    const eligible = arr.filter(e => e && e.id && !used.has(e.id));
+    if (!eligible.length) return null;
+    // Dedup by eventId (don't repeat milestones, reduce repeats)
+    const deduped = eligible.filter(e => {
+      const seen = char.history?.some(h => h.eventId === e.eventId);
+      if (!seen) return true;
+      if (e.type === 'milestone') return false;
+      return chance(30); // 30% chance to repeat non-milestones
+    });
+    if (!deduped.length) return null;
+    const total = deduped.reduce((s, e) => s + (e._weight || 1), 0);
+    let r = Math.random() * total;
+    for (const e of deduped) {
+      r -= (e._weight || 1);
+      if (r <= 0) return e;
+    }
+    return deduped[deduped.length - 1];
+  }
+
   let count = 1;
   if (chance(40)) count = 2;
   if (chance(15)) count = 3;
+
   const selected = [];
   const used = new Set();
-  for (const e of shuffled) {
-    if (selected.length >= count) break;
-    if (!e || !e.id) continue;
-    if (used.has(e.id)) continue;
-    if (char.history?.some(h => h.eventId === e.id)) {
-      if (e.type === 'milestone') continue;
-      if (chance(70)) continue;
-    }
-    selected.push({ ...e, id: uuidv4(), eventId: e.id });
+  for (let i = 0; i < count; i++) {
+    const e = weightedPick(pool, used);
+    if (!e) break;
     used.add(e.id);
+    selected.push({ ...e, id: uuidv4(), eventId: e.eventId || e.id });
   }
+
+  // Consequence chain injection — check recent history for triggers
+  const consequences = getConsequenceEvents(char.age, char);
+  consequences.forEach(ce => {
+    const alreadySeen = char.history?.some(h => h.eventId === ce.id);
+    if (!alreadySeen && chance(60)) {
+      selected.push({ ...ce, id: uuidv4(), eventId: ce.id });
+    }
+  });
+
   return selected;
 }
 

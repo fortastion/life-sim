@@ -13,6 +13,8 @@ import MultiplayerTab from '../components/tabs/MultiplayerTab';
 import AssetsTab from '../components/tabs/AssetsTab';
 import HealthTab from '../components/tabs/HealthTab';
 import EventAnimation from '../components/EventAnimation';
+import AgeUpActions from '../components/AgeUpActions';
+import AgeUpSummary from '../components/AgeUpSummary';
 
 const TAB_COMPONENTS = {
   life:          LifeTab,
@@ -69,7 +71,7 @@ function DeathScreen() {
 }
 
 export default function Game() {
-  const { character, phase, activeTab, pendingChoices } = useGameStore();
+  const { character, phase, activeTab, pendingChoices, showAgeActions, lastAgeUpSummary } = useGameStore();
   const [animation, setAnimation] = useState(null);
 
   if (!character) return null;
@@ -84,24 +86,42 @@ export default function Game() {
         <StatBars stats={character.stats} />
       </div>
 
-      {/* Tab content */}
+      {/* Tab content — replaced by AgeUpActions when open */}
       <div className="flex-1 overflow-hidden relative">
         <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.12 }}
-            className="h-full overflow-y-auto"
-          >
-            <TabComponent setAnimation={setAnimation} />
-          </motion.div>
+          {showAgeActions ? (
+            <motion.div
+              key="age-actions"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.15 }}
+              className="h-full"
+            >
+              <AgeUpActions />
+            </motion.div>
+          ) : (
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.12 }}
+              className="h-full overflow-y-auto"
+            >
+              <TabComponent setAnimation={setAnimation} />
+            </motion.div>
+          )}
         </AnimatePresence>
 
         {/* Choice modal */}
         <AnimatePresence>
           {pendingChoices.length > 0 && <ChoiceModal />}
+        </AnimatePresence>
+
+        {/* Age-up summary overlay */}
+        <AnimatePresence>
+          {lastAgeUpSummary && <AgeUpSummary />}
         </AnimatePresence>
 
         {/* Pixel art animation overlay */}
@@ -116,12 +136,13 @@ export default function Game() {
         </AnimatePresence>
       </div>
 
-      {/* Bottom nav */}
-      <div className="flex-shrink-0">
-        <BottomNav />
-      </div>
+      {/* Bottom nav — hidden during action picker */}
+      {!showAgeActions && (
+        <div className="flex-shrink-0">
+          <BottomNav />
+        </div>
+      )}
 
-      {/* Toast notifications */}
       <NotificationToast />
     </div>
   );

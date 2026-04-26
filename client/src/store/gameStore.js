@@ -63,12 +63,15 @@ function makeAction(engineFn, onResult) {
 
 const useGameStore = create((set, get) => ({
   // ── Game State ─────────────────────────────────────────────────────────────────
-  phase:          'menu', // menu | create | playing | dead
-  character:      null,
-  pendingChoices: [],
-  notifications:  [],
-  activeTab:      'life',
-  lastEventScene: null,    // triggers pixel-art animation in Game.jsx
+  phase:            'menu', // menu | create | playing | dead
+  character:        null,
+  pendingChoices:   [],
+  notifications:    [],
+  activeTab:        'life',
+  lastEventScene:   null,
+  showAgeActions:   false,
+  lastAgeUpSummary: null,
+  pendingAgeActions: [],
 
   // ── Multiplayer ────────────────────────────────────────────────────────────────
   roomCode:       null,
@@ -97,6 +100,40 @@ const useGameStore = create((set, get) => ({
     }
   },
 
+  // Open the annual action picker before aging
+  openAgeActions: () => {
+    const { pendingChoices } = get();
+    if (pendingChoices.length > 0) {
+      get().addNotification({ type: 'warning', message: 'Resolve your pending choices first!' });
+      return;
+    }
+    set({ showAgeActions: true, pendingAgeActions: [] });
+  },
+
+  // Called when player confirms their 3 annual actions
+  confirmAgeActions: (actions) => {
+    const { character } = get();
+    if (!character) return;
+    // Apply action stat effects before aging
+    const c = JSON.parse(JSON.stringify(character));
+    const clampStat = (v) => Math.max(0, Math.min(100, v));
+    actions.forEach(action => {
+      if (action.effects.happiness) c.stats.happiness = clampStat(c.stats.happiness + action.effects.happiness);
+      if (action.effects.health)    c.stats.health    = clampStat(c.stats.health    + action.effects.health);
+      if (action.effects.smarts)    c.stats.smarts    = clampStat(c.stats.smarts    + action.effects.smarts);
+      if (action.effects.looks)     c.stats.looks     = clampStat(c.stats.looks     + action.effects.looks);
+      if (action.effects.money)     c.finances.cash  += action.effects.money;
+      // Store action history for consequence chain checks
+      if (action.consequenceKey) {
+        c.history = c.history || [];
+        c.history.push({ type: 'action', eventId: action.consequenceKey, message: `You chose to ${action.name} this year.`, icon: action.icon });
+      }
+    });
+    set({ character: c, showAgeActions: false, pendingAgeActions: actions });
+    // Now run the actual age up
+    get().ageUp();
+  },
+
   ageUp: () => {
     const { character, pendingChoices } = get();
     if (!character || !character.alive) return;
@@ -105,19 +142,46 @@ const useGameStore = create((set, get) => ({
       return;
     }
 
+    // Snapshot prev stats for summary card diff
+    const prevStats = { ...character.stats };
+    const prevCash  = character.finances.cash;
+
     const { character: newChar, choiceEvents, died } = processAgeUp(character);
 
-    // Determine animation scene from new history
+    // Build age-up summary
+    const autoEvents = (newChar.history || []).slice(-6).filter(h => h.type !== 'action');
+    const statDiffs = {};
+    ['happiness','health','smarts','looks'].forEach(k => {
+      const diff = Math.round((newChar.stats[k] || 0) - (prevStats[k] || 0));
+      if (diff !== 0) statDiffs[k] = diff;
+    });
+    const cashDiff = Math.round(newChar.finances.cash - prevCash);
+    const goodEvents = autoEvents.filter(e => e.type === 'good' || e.type === 'milestone').length;
+    const badEvents  = autoEvents.filter(e => e.type === 'bad').length;
+    const vibe = goodEvents > badEvents ? 'good' : badEvents > goodEvents ? 'bad' : 'mixed';
+
+    const summary = {
+      age: newChar.age,
+      statDiffs,
+      cashDiff,
+      events: autoEvents.slice(0, 4),
+      vibe,
+    };
+
     const newHistory = (newChar.history || []).slice(-(died ? 3 : 8));
     const scene = died ? 'died' : detectAnimationScene(newHistory);
 
-    set({ character: newChar, pendingChoices: choiceEvents || [], lastEventScene: scene });
+    set({
+      character: newChar,
+      pendingChoices: choiceEvents || [],
+      lastEventScene: scene,
+      lastAgeUpSummary: died ? null : summary,
+      pendingAgeActions: [],
+    });
 
     if (died) {
       set({ phase: 'dead' });
       get().addNotification({ type: 'bad', message: `You died at age ${newChar.age} from ${newChar.deathCause}.` });
-    } else {
-      get().addNotification({ type: 'neutral', message: `You are now ${newChar.age} years old!` });
     }
 
     // Broadcast to multiplayer friend
@@ -136,7 +200,8 @@ const useGameStore = create((set, get) => ({
     get().saveGame(newChar);
   },
 
-  clearLastScene: () => set({ lastEventScene: null }),
+  clearLastScene:    () => set({ lastEventScene: null }),
+  clearAgeUpSummary: () => set({ lastAgeUpSummary: null }),
 
   makeChoice: (eventId, choiceIndex) => {
     try {

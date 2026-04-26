@@ -5,7 +5,7 @@ import EventCard from '../EventCard';
 import { getMoodEmoji, getAgeEmoji, getLifeStage, formatMoney } from '../../engine/gameEngine';
 
 export default function LifeTab({ setAnimation }) {
-  const { character, ageUp, pendingChoices, lastEventScene, clearLastScene } = useGameStore();
+  const { character, openAgeActions, pendingChoices, lastEventScene, clearLastScene } = useGameStore();
   const [showFullHistory, setShowFullHistory] = useState(false);
 
   // Fire pixel-art animation whenever lastEventScene changes
@@ -133,13 +133,13 @@ export default function LifeTab({ setAnimation }) {
       <div className="px-4 mb-3 flex-shrink-0">
         <motion.button
           whileTap={{ scale: 0.96 }}
-          onClick={ageUp}
+          onClick={openAgeActions}
           disabled={pendingChoices.length > 0}
           className="ageup-btn w-full py-4 rounded-2xl text-white font-bold text-lg disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {pendingChoices.length > 0
             ? `⚠️ Resolve ${pendingChoices.length} Choice${pendingChoices.length > 1 ? 's' : ''} First`
-            : `🎂 Age Up → ${character.age + 1}`}
+            : `🎯 Plan Year ${character.age + 1}`}
         </motion.button>
       </div>
 
