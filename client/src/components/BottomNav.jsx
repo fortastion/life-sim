@@ -7,6 +7,7 @@ const TABS = [
   { id: 'relationships', icon: '❤️', label: 'People' },
   { id: 'career',        icon: '💼', label: 'Career' },
   { id: 'assets',        icon: '🏡', label: 'Assets' },
+  { id: 'health',        icon: '❤️‍🩹', label: 'Health' },
   { id: 'multiplayer',   icon: '👥', label: 'Friend' },
 ];
 

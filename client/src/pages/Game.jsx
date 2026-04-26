@@ -11,6 +11,7 @@ import RelationshipsTab from '../components/tabs/RelationshipsTab';
 import CareerTab from '../components/tabs/CareerTab';
 import MultiplayerTab from '../components/tabs/MultiplayerTab';
 import AssetsTab from '../components/tabs/AssetsTab';
+import HealthTab from '../components/tabs/HealthTab';
 import EventAnimation from '../components/EventAnimation';
 
 const TAB_COMPONENTS = {
@@ -19,6 +20,7 @@ const TAB_COMPONENTS = {
   relationships: RelationshipsTab,
   career:        CareerTab,
   assets:        AssetsTab,
+  health:        HealthTab,
   multiplayer:   MultiplayerTab,
 };
 

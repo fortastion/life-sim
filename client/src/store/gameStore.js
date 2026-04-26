@@ -2,8 +2,21 @@ import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import {
   createCharacter, processAgeUp, applyChoice, applyActivity,
-  applyForJob, workHard, slackOff, askForRaise,
+  applyForJob, workHard, slackOff, askForRaise, quitJob, checkPromotion,
+  interactWithCoworker, startBusiness, sellBusiness,
   spendTimeWithPartner, proposeToPartner, breakUpWithPartner, hangOutWithFriend,
+  getMarried, tryHaveKid, adoptChild, tryAffair, findPartner, goOnDate,
+  interactWithParent, interactWithSibling, interactWithChild,
+  visitDoctor, visitDentist, visitOptometrist,
+  startTherapy, stopTherapy, startMedication,
+  goToGym, buyGymMembership, getPlasticSurgery,
+  goToRehab, treatCondition,
+  commitCrime, doPrisonActivity, hireLawyer,
+  takePersonalLoan, payOffLoan, applyForCreditCard, payCreditCard,
+  buyStock, sellStock, gambleAtCasino, buyLotteryTicket,
+  changeHairColor, getTattoo, getPiercing,
+  learnInstrument, learnLanguage, readBook, meditate, takeVacation, volunteer,
+  adoptPet, petAction, postSocialMedia,
 } from '../engine/gameEngine';
 import { connectSocket, disconnectSocket, getSocket } from '../socket';
 
@@ -30,8 +43,26 @@ function detectAnimationScene(recentHistory) {
   return null;
 }
 
+// Helper to wrap engine calls
+function makeAction(engineFn, onResult) {
+  return (...args) => {
+    const { character } = arguments[0] || {};
+    return (set, get) => {
+      const char = get().character;
+      if (!char) return;
+      const result = engineFn(char, ...args);
+      if (result?.character) {
+        set({ character: result.character });
+        get().saveGame(result.character);
+      }
+      if (onResult) onResult(result, set, get);
+      return result;
+    };
+  };
+}
+
 const useGameStore = create((set, get) => ({
-  // ── Game State ─────────────────────────────────────────────────────────────
+  // ── Game State ─────────────────────────────────────────────────────────────────
   phase:          'menu', // menu | create | playing | dead
   character:      null,
   pendingChoices: [],
@@ -39,7 +70,7 @@ const useGameStore = create((set, get) => ({
   activeTab:      'life',
   lastEventScene: null,    // triggers pixel-art animation in Game.jsx
 
-  // ── Multiplayer ────────────────────────────────────────────────────────────
+  // ── Multiplayer ────────────────────────────────────────────────────────────────
   roomCode:       null,
   isHost:         false,
   friendConnected: false,
@@ -50,7 +81,7 @@ const useGameStore = create((set, get) => ({
   multiplayerError: null,
   socketConnected: false,
 
-  // ── Core Actions ───────────────────────────────────────────────────────────
+  // ── Core Actions ───────────────────────────────────────────────────────────────
   setPhase:    (phase) => set({ phase }),
   setActiveTab: (tab)  => set({ activeTab: tab }),
 
@@ -160,7 +191,7 @@ const useGameStore = create((set, get) => ({
     return result;
   },
 
-  // ── Career Actions ─────────────────────────────────────────────────────────
+  // ── Career Actions ─────────────────────────────────────────────────────────────
   workHard: () => {
     const { character } = get();
     if (!character) return;
@@ -197,7 +228,47 @@ const useGameStore = create((set, get) => ({
     return result;
   },
 
-  // ── Relationship Actions ───────────────────────────────────────────────────
+  quitJob: () => {
+    const { character } = get();
+    if (!character) return;
+    const result = quitJob(character);
+    set({ character: result.character });
+    get().addNotification({ type: 'neutral', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  interactWithCoworker: (index, action) => {
+    const { character } = get();
+    if (!character) return;
+    const result = interactWithCoworker(character, index, action);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'neutral' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  startBusiness: (bizId) => {
+    const { character } = get();
+    if (!character) return;
+    const result = startBusiness(character, bizId);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'good' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  sellBusiness: () => {
+    const { character } = get();
+    if (!character) return;
+    const result = sellBusiness(character);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'good' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  // ── Relationship Actions ───────────────────────────────────────────────────────
   spendTimeWithPartner: () => {
     const { character } = get();
     if (!character) return;
@@ -217,6 +288,19 @@ const useGameStore = create((set, get) => ({
       set({ lastEventScene: 'proposal' });
     }
     get().addNotification({ type: result.result === 'accepted' ? 'good' : 'bad', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  getMarried: () => {
+    const { character } = get();
+    if (!character) return;
+    const result = getMarried(character);
+    set({ character: result.character });
+    if (result.result === 'success') {
+      set({ lastEventScene: 'wedding' });
+    }
+    get().addNotification({ type: result.result === 'success' ? 'good' : 'warning', message: result.message });
     get().saveGame(result.character);
     return result;
   },
@@ -244,7 +328,442 @@ const useGameStore = create((set, get) => ({
     return result;
   },
 
-  // ── Asset Actions ──────────────────────────────────────────────────────────
+  findPartner: (locationId) => {
+    const { character } = get();
+    if (!character) return;
+    const result = findPartner(character, locationId);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'matched' ? 'good' : 'neutral', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  goOnDate: (dateId) => {
+    const { character } = get();
+    if (!character) return;
+    const result = goOnDate(character, dateId);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'good' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  tryAffair: () => {
+    const { character } = get();
+    if (!character) return;
+    const result = tryAffair(character);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'caught' ? 'bad' : 'neutral', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  tryHaveKid: () => {
+    const { character } = get();
+    if (!character) return;
+    const result = tryHaveKid(character);
+    set({ character: result.character });
+    if (result.result === 'success') set({ lastEventScene: 'baby' });
+    get().addNotification({ type: result.result === 'success' ? 'good' : 'neutral', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  adoptChild: () => {
+    const { character } = get();
+    if (!character) return;
+    const result = adoptChild(character);
+    set({ character: result.character });
+    if (result.result === 'success') set({ lastEventScene: 'baby' });
+    get().addNotification({ type: result.result === 'success' ? 'good' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  interactWithParent: (parent, action) => {
+    const { character } = get();
+    if (!character) return;
+    const result = interactWithParent(character, parent, action);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'neutral' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  interactWithSibling: (idx, action) => {
+    const { character } = get();
+    if (!character) return;
+    const result = interactWithSibling(character, idx, action);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'neutral' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  interactWithChild: (idx, action) => {
+    const { character } = get();
+    if (!character) return;
+    const result = interactWithChild(character, idx, action);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'neutral' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  // ── Health Actions ─────────────────────────────────────────────────────────────
+  visitDoctor: () => {
+    const { character } = get();
+    if (!character) return;
+    const result = visitDoctor(character);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'good' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  visitDentist: () => {
+    const { character } = get();
+    if (!character) return;
+    const result = visitDentist(character);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'good' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  visitOptometrist: () => {
+    const { character } = get();
+    if (!character) return;
+    const result = visitOptometrist(character);
+    set({ character: result.character });
+    get().addNotification({ type: 'neutral', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  startTherapy: (therapyId) => {
+    const { character } = get();
+    if (!character) return;
+    const result = startTherapy(character, therapyId);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'good' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  stopTherapy: () => {
+    const { character } = get();
+    if (!character) return;
+    const result = stopTherapy(character);
+    set({ character: result.character });
+    get().addNotification({ type: 'neutral', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  startMedication: (medId) => {
+    const { character } = get();
+    if (!character) return;
+    const result = startMedication(character, medId);
+    set({ character: result.character });
+    get().addNotification({ type: 'neutral', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  goToGym: (workoutId) => {
+    const { character } = get();
+    if (!character) return;
+    const result = goToGym(character, workoutId);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'good' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  buyGymMembership: () => {
+    const { character } = get();
+    if (!character) return;
+    const result = buyGymMembership(character);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'good' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  getPlasticSurgery: (surgeryId) => {
+    const { character } = get();
+    if (!character) return;
+    const result = getPlasticSurgery(character, surgeryId);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'good' : result.result === 'complication' ? 'bad' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  goToRehab: (programId) => {
+    const { character } = get();
+    if (!character) return;
+    const result = goToRehab(character, programId);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'good' : result.result === 'relapsed' ? 'bad' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  treatCondition: (conditionName, treatmentId) => {
+    const { character } = get();
+    if (!character) return;
+    const result = treatCondition(character, conditionName, treatmentId);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'good' : result.result === 'failed' ? 'bad' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  // ── Crime Actions ──────────────────────────────────────────────────────────────
+  commitCrime: (crimeId) => {
+    const { character } = get();
+    if (!character) return;
+    const result = commitCrime(character, crimeId);
+    set({ character: result.character });
+    if (result.result === 'caught') set({ lastEventScene: 'arrested' });
+    get().addNotification({ type: result.result === 'success' ? 'good' : result.result === 'caught' ? 'bad' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  doPrisonActivity: (activityId) => {
+    const { character } = get();
+    if (!character) return;
+    const result = doPrisonActivity(character, activityId);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' || result.result === 'escaped' ? 'good' : 'bad', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  hireLawyer: (tierId) => {
+    const { character } = get();
+    if (!character) return;
+    const result = hireLawyer(character, tierId);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'good' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  // ── Finance Actions ────────────────────────────────────────────────────────────
+  takePersonalLoan: (amount, years) => {
+    const { character } = get();
+    if (!character) return;
+    const result = takePersonalLoan(character, amount, years);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'good' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  payOffLoan: (loanId) => {
+    const { character } = get();
+    if (!character) return;
+    const result = payOffLoan(character, loanId);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'good' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  applyForCreditCard: () => {
+    const { character } = get();
+    if (!character) return;
+    const result = applyForCreditCard(character);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'good' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  payCreditCard: (amount) => {
+    const { character } = get();
+    if (!character) return;
+    const result = payCreditCard(character, amount);
+    set({ character: result.character });
+    get().addNotification({ type: 'good', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  buyStock: (ticker, shares) => {
+    const { character } = get();
+    if (!character) return;
+    const result = buyStock(character, ticker, shares);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'good' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  sellStock: (ticker, shares) => {
+    const { character } = get();
+    if (!character) return;
+    const result = sellStock(character, ticker, shares);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'good' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  gambleAtCasino: (gameId, betAmount) => {
+    const { character } = get();
+    if (!character) return;
+    const result = gambleAtCasino(character, gameId, betAmount);
+    set({ character: result.character });
+    if (result.result === 'win') set({ lastEventScene: 'lottery' });
+    get().addNotification({ type: result.result === 'win' ? 'good' : 'bad', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  buyLotteryTicket: () => {
+    const { character } = get();
+    if (!character) return;
+    const result = buyLotteryTicket(character);
+    set({ character: result.character });
+    if (result.result === 'jackpot') set({ lastEventScene: 'lottery' });
+    get().addNotification({
+      type: result.result === 'jackpot' || result.result === 'small_win' ? 'good' : 'neutral',
+      message: result.message,
+    });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  // ── Appearance Actions ─────────────────────────────────────────────────────────
+  changeHairColor: (colorId) => {
+    const { character } = get();
+    if (!character) return;
+    const result = changeHairColor(character, colorId);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'good' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  getTattoo: (placementId) => {
+    const { character } = get();
+    if (!character) return;
+    const result = getTattoo(character, placementId);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'good' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  getPiercing: (typeId) => {
+    const { character } = get();
+    if (!character) return;
+    const result = getPiercing(character, typeId);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'good' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  // ── Hobby / Lifestyle Actions ──────────────────────────────────────────────────
+  learnInstrument: (name) => {
+    const { character } = get();
+    if (!character) return;
+    const result = learnInstrument(character, name);
+    set({ character: result.character });
+    get().addNotification({ type: 'good', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  learnLanguage: (lang) => {
+    const { character } = get();
+    if (!character) return;
+    const result = learnLanguage(character, lang);
+    set({ character: result.character });
+    get().addNotification({ type: 'good', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  readBook: () => {
+    const { character } = get();
+    if (!character) return;
+    const result = readBook(character);
+    set({ character: result.character });
+    get().addNotification({ type: 'good', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  meditate: () => {
+    const { character } = get();
+    if (!character) return;
+    const result = meditate(character);
+    set({ character: result.character });
+    get().addNotification({ type: 'good', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  takeVacation: (destId) => {
+    const { character } = get();
+    if (!character) return;
+    const result = takeVacation(character, destId);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'good' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  volunteer: () => {
+    const { character } = get();
+    if (!character) return;
+    const result = volunteer(character);
+    set({ character: result.character });
+    get().addNotification({ type: 'good', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  // ── Pet Actions ────────────────────────────────────────────────────────────────
+  adoptPet: (petTypeId, name) => {
+    const { character } = get();
+    if (!character) return;
+    const result = adoptPet(character, petTypeId, name);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'good' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  petAction: (petId, action) => {
+    const { character } = get();
+    if (!character) return;
+    const result = petAction(character, petId, action);
+    set({ character: result.character });
+    get().addNotification({ type: result.result === 'success' ? 'good' : 'warning', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  // ── Social Media ───────────────────────────────────────────────────────────────
+  postSocialMedia: () => {
+    const { character } = get();
+    if (!character) return;
+    const result = postSocialMedia(character);
+    set({ character: result.character });
+    get().addNotification({ type: 'neutral', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  // ── Asset Actions ──────────────────────────────────────────────────────────────
   buyAsset: (item) => {
     const { character } = get();
     if (!character) return;
@@ -297,14 +816,14 @@ const useGameStore = create((set, get) => ({
     get().saveGame(char);
   },
 
-  // ── Notifications ──────────────────────────────────────────────────────────
+  // ── Notifications ──────────────────────────────────────────────────────────────
   addNotification: (notif) => {
     const id = Date.now() + Math.random();
     set(s => ({ notifications: [...s.notifications, { id, ...notif }] }));
     setTimeout(() => set(s => ({ notifications: s.notifications.filter(n => n.id !== id) })), 3500);
   },
 
-  // ── Save / Load ────────────────────────────────────────────────────────────
+  // ── Save / Load ────────────────────────────────────────────────────────────────
   saveGame: (char) => {
     try {
       const data = char || get().character;
@@ -321,6 +840,19 @@ const useGameStore = create((set, get) => ({
       if (!char.assets) char.assets = [];
       if (!char.health) char.health = { conditions: [], addictions: [], inPrison: false, prisonYearsLeft: 0 };
       if (!char.relationships) char.relationships = { partner: null, married: false, engaged: false, exPartners: [], children: [], friends: [], enemies: [] };
+      if (!char.mentalHealth) char.mentalHealth = { score: 60, inTherapy: false, therapyType: null, therapyYears: 0, onMedication: false, medication: null };
+      if (!char.appearance) char.appearance = { hairColor: 'dark_brown', tattoos: [], piercings: [], weight: 'normal', glasses: false };
+      if (!char.hobbies) char.hobbies = { instrument: null, sport: null, artSkill: 0, writingSkill: 0, booksRead: 0, booksWritten: [], languages: [] };
+      if (!char.gym) char.gym = { hasMembership: false, workoutsThisYear: 0, fitnessLevel: 50 };
+      if (!char.pets) char.pets = [];
+      if (!char.finances.stocks) char.finances.stocks = [];
+      if (!char.finances.loans) char.finances.loans = [];
+      if (!char.finances.creditCardDebt) char.finances.creditCardDebt = 0;
+      if (!char.finances.creditCardLimit) char.finances.creditCardLimit = 0;
+      if (!char.criminalRecord) char.criminalRecord = [];
+      if (!char.socialMedia) char.socialMedia = { platform: null, followers: 0 };
+      if (char.karma === undefined) char.karma = 50;
+      if (char.fame === undefined) char.fame = 0;
       set({ character: char, phase: char.alive ? 'playing' : 'dead', pendingChoices: [], lastEventScene: null });
       return true;
     } catch (_) { return false; }
@@ -333,7 +865,7 @@ const useGameStore = create((set, get) => ({
 
   hasSave: () => !!localStorage.getItem(SAVE_KEY),
 
-  // ── Multiplayer ────────────────────────────────────────────────────────────
+  // ── Multiplayer ────────────────────────────────────────────────────────────────
   connectMultiplayer: () => {
     const socket = connectSocket();
     set({ socketConnected: socket.connected });
@@ -364,7 +896,6 @@ const useGameStore = create((set, get) => ({
     });
 
     socket.on('friend_character_updated', ({ character }) => {
-      // This fires whenever friend ages up OR creates a new character
       set({ friendCharacter: character });
     });
 
