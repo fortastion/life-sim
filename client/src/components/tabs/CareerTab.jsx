@@ -3,24 +3,38 @@ import { motion } from 'framer-motion';
 import useGameStore from '../../store/gameStore';
 import { CAREER_TRACKS, getAvailableCareers } from '../../data/careers';
 import { formatMoney, BUSINESS_TYPES } from '../../engine/gameEngine';
+import { PLATFORMS, POST_TYPES, getTier, formatFollowers } from '../../data/socialMedia';
 
 export default function CareerTab() {
   const {
     character,
     applyForJob, workHard, slackOff, askForRaise, quitJob,
     interactWithCoworker, startBusiness, sellBusiness,
+    postToSocialMedia,
   } = useGameStore();
-  const [showJobBoard, setShowJobBoard]   = useState(false);
-  const [showBizBoard, setShowBizBoard]   = useState(false);
-  const [lastAction, setLastAction]       = useState(null);
-  const [actionLoading, setActionLoading] = useState(null);
-  const [confirmQuit, setConfirmQuit]     = useState(false);
+  const [showJobBoard, setShowJobBoard]       = useState(false);
+  const [showBizBoard, setShowBizBoard]       = useState(false);
+  const [lastAction, setLastAction]           = useState(null);
+  const [actionLoading, setActionLoading]     = useState(null);
+  const [confirmQuit, setConfirmQuit]         = useState(false);
+  const [smExpanded, setSmExpanded]           = useState(null);   // platform id
+  const [smNiche, setSmNiche]                 = useState({});     // { platformId: niche }
+  const [smFeedback, setSmFeedback]           = useState(null);
+  const [smPosting, setSmPosting]             = useState(null);
   if (!character) return null;
 
   const { career, education, finances, stats } = character;
   const availableCareers = character.age >= 16 ? getAvailableCareers(character) : [];
   const currentTrack  = career.trackId ? CAREER_TRACKS.find(t => t.id === career.trackId) : null;
   const nextLevel     = currentTrack ? currentTrack.levels[career.level + 1] : null;
+
+  const doSmPost = (platformId, postTypeId) => {
+    const niche = smNiche[platformId] || PLATFORMS.find(p => p.id === platformId)?.niches[0];
+    setSmPosting(platformId + postTypeId);
+    const result = postToSocialMedia(platformId, niche, postTypeId);
+    setSmFeedback({ msg: result?.message || 'Posted!', good: result?.result !== 'failed' });
+    setTimeout(() => { setSmFeedback(null); setSmPosting(null); }, 3000);
+  };
 
   const doAction = async (label, fn) => {
     setActionLoading(label);
@@ -344,6 +358,181 @@ export default function CareerTab() {
               <span>✅</span><span>College degree</span>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── Social Media ──────────────────────────────────────────────── */}
+      {character.age >= 13 && (
+        <div className="bg-bg-card rounded-2xl p-4 border border-bg-border mb-4">
+          <h3 className="text-sm font-semibold text-slate-400 mb-3">📱 Social Media</h3>
+          <p className="text-xs text-slate-500 mb-3">Build an audience alongside your career. Go viral to earn real income.</p>
+
+          {/* SM feedback toast */}
+          {smFeedback && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`mb-3 p-2.5 rounded-xl text-xs font-semibold text-center ${
+                smFeedback.good ? 'bg-green-800/50 text-green-200 border border-green-700/40' : 'bg-red-800/50 text-red-200 border border-red-700/40'
+              }`}
+            >
+              {smFeedback.msg}
+            </motion.div>
+          )}
+
+          <div className="flex flex-col gap-3">
+            {PLATFORMS.map(platform => {
+              const accounts   = character.socialMedia?.accounts || {};
+              const account    = accounts[platform.id];
+              const followers  = account?.followers || 0;
+              const tier       = getTier(followers);
+              const consistency = account?.consistency || 0;
+              const monthlyInc = account?.monthlyIncome || 0;
+              const isExpanded = smExpanded === platform.id;
+              const selectedNiche = smNiche[platform.id] || platform.niches[0];
+
+              const borderColor = {
+                red: 'border-red-800/40',    pink: 'border-pink-800/40',
+                purple: 'border-purple-800/40', violet: 'border-violet-800/40',
+                slate: 'border-slate-700/40',
+              }[platform.color] || 'border-bg-border';
+
+              const accentText = {
+                red: 'text-red-400',     pink: 'text-pink-400',
+                purple: 'text-purple-400', violet: 'text-violet-400',
+                slate: 'text-slate-300',
+              }[platform.color] || 'text-white';
+
+              return (
+                <div key={platform.id} className={`rounded-2xl border ${borderColor} bg-bg-secondary overflow-hidden`}>
+                  {/* Platform header row */}
+                  <button
+                    onClick={() => setSmExpanded(isExpanded ? null : platform.id)}
+                    className="w-full flex items-center gap-3 p-3 tap-effect"
+                  >
+                    <span className="text-2xl flex-shrink-0">{platform.icon}</span>
+                    <div className="flex-1 text-left min-w-0">
+                      <div className={`font-bold text-sm ${accentText}`}>{platform.name}</div>
+                      {account ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-slate-300 font-semibold">{formatFollowers(followers)}</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${tier.bgClass} ${tier.colorClass}`}>
+                            {tier.icon} {tier.name}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-500">No account</span>
+                      )}
+                    </div>
+                    {account && monthlyInc > 0 && (
+                      <div className="text-right flex-shrink-0">
+                        <div className="text-xs text-green-400 font-semibold">+{formatMoney(monthlyInc, character.currency)}/mo</div>
+                      </div>
+                    )}
+                    <span className={`text-slate-500 text-sm transition-transform ${isExpanded ? 'rotate-180' : ''}`}>▾</span>
+                  </button>
+
+                  {/* Expanded panel */}
+                  {isExpanded && (
+                    <div className="px-3 pb-3 border-t border-bg-border/50">
+                      {account && (
+                        <>
+                          {/* Consistency bar */}
+                          <div className="mt-3 mb-2">
+                            <div className="flex justify-between text-[10px] text-slate-500 mb-1">
+                              <span>Consistency</span>
+                              <span>{Math.round(consistency)}%</span>
+                            </div>
+                            <div className="w-full h-1.5 bg-bg-border rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all ${
+                                  consistency > 60 ? 'bg-green-500' : consistency > 30 ? 'bg-yellow-500' : 'bg-red-500'
+                                }`}
+                                style={{ width: `${consistency}%` }}
+                              />
+                            </div>
+                            <div className="text-[10px] text-slate-600 mt-0.5">
+                              Post regularly to keep it high · drops 30% per year if inactive
+                            </div>
+                          </div>
+                          {/* Stats row */}
+                          <div className="flex gap-3 text-center mb-3">
+                            <div className="flex-1 bg-bg-card rounded-xl p-2">
+                              <div className="text-xs font-bold text-white">{formatFollowers(followers)}</div>
+                              <div className="text-[10px] text-slate-500">Followers</div>
+                            </div>
+                            <div className="flex-1 bg-bg-card rounded-xl p-2">
+                              <div className="text-xs font-bold text-green-400">+{formatMoney(monthlyInc, character.currency)}</div>
+                              <div className="text-[10px] text-slate-500">/ month</div>
+                            </div>
+                            <div className="flex-1 bg-bg-card rounded-xl p-2">
+                              <div className={`text-xs font-bold ${tier.colorClass}`}>{tier.icon} {tier.name}</div>
+                              <div className="text-[10px] text-slate-500">Tier</div>
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {/* Niche picker */}
+                      <div className="mb-3">
+                        <label className="text-[10px] text-slate-500 mb-1 block uppercase tracking-wide">Niche</label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {platform.niches.map(n => (
+                            <button
+                              key={n}
+                              onClick={() => setSmNiche(prev => ({ ...prev, [platform.id]: n }))}
+                              className={`text-[10px] px-2 py-1 rounded-lg font-semibold tap-effect transition-all ${
+                                selectedNiche === n
+                                  ? `${tier.bgClass} ${tier.colorClass} border border-current/30`
+                                  : 'bg-bg-border text-slate-400'
+                              }`}
+                            >
+                              {n}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Post type buttons */}
+                      <div className="mb-2">
+                        <label className="text-[10px] text-slate-500 mb-1 block uppercase tracking-wide">Post Type</label>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {POST_TYPES.map(pt => {
+                            const key = platform.id + pt.id;
+                            const busy = smPosting === key;
+                            return (
+                              <button
+                                key={pt.id}
+                                onClick={() => doSmPost(platform.id, pt.id)}
+                                disabled={!!smPosting}
+                                className={`flex items-center gap-2 p-2.5 rounded-xl border tap-effect transition-all ${
+                                  busy
+                                    ? 'bg-purple-800/50 border-purple-600/60 text-white'
+                                    : 'bg-bg-card border-bg-border text-slate-300 hover:border-purple-600/40 hover:text-white'
+                                } disabled:opacity-50`}
+                              >
+                                <span className="text-base">{pt.icon}</span>
+                                <div className="text-left min-w-0">
+                                  <div className="text-[11px] font-semibold leading-tight">{pt.name}</div>
+                                  <div className="text-[9px] text-slate-500 leading-tight">{pt.desc}</div>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {!account && (
+                        <p className="text-[10px] text-slate-500 mt-2 text-center">
+                          Post to auto-create your {platform.name} account 🚀
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

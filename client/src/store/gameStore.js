@@ -16,7 +16,7 @@ import {
   buyStock, sellStock, gambleAtCasino, buyLotteryTicket,
   changeHairColor, getTattoo, getPiercing,
   learnInstrument, learnLanguage, readBook, meditate, takeVacation, volunteer,
-  adoptPet, petAction, postSocialMedia,
+  adoptPet, petAction, postSocialMedia, postToSocialMedia,
 } from '../engine/gameEngine';
 import { connectSocket, disconnectSocket, getSocket } from '../socket';
 
@@ -824,6 +824,17 @@ const useGameStore = create((set, get) => ({
     const result = postSocialMedia(character);
     set({ character: result.character });
     get().addNotification({ type: 'neutral', message: result.message });
+    get().saveGame(result.character);
+    return result;
+  },
+
+  postToSocialMedia: (platformId, niche, postTypeId) => {
+    const { character } = get();
+    if (!character) return;
+    const result = postToSocialMedia(character, platformId, niche, postTypeId);
+    set({ character: result.character });
+    const isGood = result.result === 'viral';
+    get().addNotification({ type: isGood ? 'good' : 'neutral', message: result.message });
     get().saveGame(result.character);
     return result;
   },

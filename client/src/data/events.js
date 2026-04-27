@@ -118,7 +118,7 @@ export const EVENTS = [
 
   // ── YOUNG ADULT (18-25) ──────────────────────────────────────────────────
   { id: 'moved_out',          stage: 'youngAdult', minAge: 18, maxAge: 22, type: 'milestone', icon: '🏠', message: "You moved out of your parents' house into your own place!", effects: { happiness: 15 }, special: 'move_out' },
-  { id: 'college_graduate',   stage: 'youngAdult', minAge: 21, maxAge: 26, type: 'milestone', icon: '🎓', message: 'You graduated from college! Time to take on the world.', effects: { happiness: 20, smarts: 5 }, condition: 'inUniversity', special: 'graduate' },
+  { id: 'college_graduate',   stage: 'youngAdult', minAge: 21, maxAge: 26, type: 'milestone', icon: '🎓', message: 'You graduated from college! Time to take on the world.', effects: { happiness: 20, smarts: 5 }, condition: 'inUniversity', special: 'graduate', isPlayerDriven: true },
   { id: 'student_loan_crisis',stage: 'youngAdult', minAge: 22, maxAge: 30, type: 'bad',       icon: '💸', message: 'Your student loan payments started. $1,200/month. Ouch.', effects: { happiness: -8 }, condition: 'hasStudentDebt' },
   { id: 'wild_vacation',      stage: 'youngAdult', minAge: 18, maxAge: 26, type: 'good',      icon: '🏖️', message: 'You went on a wild spring break trip with friends. Unforgettable.', effects: { happiness: 15, health: -3 } },
   { id: 'first_real_job',     stage: 'youngAdult', minAge: 21, maxAge: 26, type: 'milestone', icon: '👔', message: 'You landed your first real career-level job!', effects: { happiness: 18 }, condition: 'unemployed' },
@@ -131,23 +131,23 @@ export const EVENTS = [
   { id: 'gambling_loss',      minAge: 18, maxAge: 99, type: 'bad',  icon: '🎰', message: 'You lost a lot of money gambling. You need help.', effects: { happiness: -10, money: -3000 } },
 
   // ── ADULT (26-45) ────────────────────────────────────────────────────────
-  { id: 'proposal',           stage: 'adult', minAge: 24, maxAge: 40, type: 'milestone', icon: '💍', message: 'You proposed! They said YES!', effects: { happiness: 25 }, condition: 'hasPartner', special: 'engage' },
-  { id: 'got_proposed_to',    stage: 'adult', minAge: 22, maxAge: 40, type: 'milestone', icon: '💍', message: 'Your partner got down on one knee. Your heart is pounding!', effects: { happiness: 25 }, condition: 'hasPartner', special: 'engage' },
-  { id: 'wedding',            stage: 'adult', minAge: 24, maxAge: 45, type: 'milestone', icon: '👰', message: 'Today was the happiest day of your life. You got married!', effects: { happiness: 30, money: -15000 }, condition: 'engaged', special: 'marry' },
-  { id: 'first_child',        stage: 'adult', minAge: 24, maxAge: 42, type: 'milestone', icon: '🍼', message: 'You welcomed your first child into the world. Life will never be the same.', effects: { happiness: 25, health: -5 }, condition: 'married', special: 'add_child' },
-  { id: 'second_child',       stage: 'adult', minAge: 26, maxAge: 44, type: 'good',      icon: '🍼', message: 'Baby number two arrived! Your home is gloriously chaotic.', effects: { happiness: 15, money: -5000 }, condition: 'hasChildren', special: 'add_child' },
+  { id: 'proposal',           stage: 'adult', minAge: 24, maxAge: 40, type: 'milestone', icon: '💍', message: 'You proposed! They said YES!', effects: { happiness: 25 }, condition: 'hasPartner', special: 'engage', isPlayerDriven: true },
+  { id: 'got_proposed_to',    stage: 'adult', minAge: 22, maxAge: 40, type: 'milestone', icon: '💍', message: 'Your partner got down on one knee. Your heart is pounding!', effects: { happiness: 25 }, condition: 'hasPartner', special: 'engage', isPlayerDriven: true },
+  { id: 'wedding',            stage: 'adult', minAge: 24, maxAge: 45, type: 'milestone', icon: '👰', message: 'Today was the happiest day of your life. You got married!', effects: { happiness: 30, money: -15000 }, condition: 'engaged', special: 'marry', isPlayerDriven: true },
+  { id: 'first_child',        stage: 'adult', minAge: 24, maxAge: 42, type: 'milestone', icon: '🍼', message: 'You welcomed your first child into the world. Life will never be the same.', effects: { happiness: 25, health: -5 }, condition: 'married', special: 'add_child', isPlayerDriven: true },
+  { id: 'second_child',       stage: 'adult', minAge: 26, maxAge: 44, type: 'good',      icon: '🍼', message: 'Baby number two arrived! Your home is gloriously chaotic.', effects: { happiness: 15, money: -5000 }, condition: 'hasChildren', special: 'add_child', isPlayerDriven: true },
   { id: 'miscarriage',        stage: 'adult', minAge: 24, maxAge: 42, type: 'bad',       icon: '😔', message: 'You suffered a miscarriage. The grief is overwhelming.', effects: { happiness: -25, health: -8 }, condition: 'married' },
-  { id: 'promotion',          stage: 'adult', minAge: 25, maxAge: 60, type: 'good',      icon: '📈', message: 'You got promoted at [employer]! New title, bigger paycheck.', effects: { happiness: 15 }, condition: 'employed', special: 'promote' },
-  { id: 'fired',              stage: 'adult', minAge: 22, maxAge: 60, type: 'bad',       icon: '📦', message: 'You got fired from [employer]. Walked out with a box of your stuff.', effects: { happiness: -20 }, condition: 'employed', special: 'fire' },
+  { id: 'promotion',          stage: 'adult', minAge: 25, maxAge: 60, type: 'good',      icon: '📈', message: 'You got promoted at [employer]! New title, bigger paycheck.', effects: { happiness: 15 }, condition: 'employed', special: 'promote', isPlayerDriven: true },
+  { id: 'fired',              stage: 'adult', minAge: 22, maxAge: 60, type: 'bad',       icon: '📦', message: 'You got fired from [employer]. Walked out with a box of your stuff.', effects: { happiness: -20 }, condition: 'employed', special: 'fire', isPlayerDriven: true },
   { id: 'bought_house',       stage: 'adult', minAge: 26, maxAge: 50, type: 'milestone', icon: '🏡', message: "You bought your first home! 30-year mortgage. You're officially a homeowner.", effects: { happiness: 18, money: -30000 } },
-  { id: 'divorce',            stage: 'adult', minAge: 26, maxAge: 60, type: 'bad',       icon: '💔', message: 'Your marriage fell apart. You and [spouse] are getting divorced.', effects: { happiness: -25, money: -20000 }, condition: 'married', special: 'divorce' },
-  { id: 'affair_discovered',  stage: 'adult', minAge: 26, maxAge: 55, type: 'bad',       icon: '😱', message: '[spouse] discovered your affair. Everything is falling apart.', effects: { happiness: -30 }, condition: 'married' },
+  { id: 'divorce',            stage: 'adult', minAge: 26, maxAge: 60, type: 'bad',       icon: '💔', message: 'Your marriage fell apart. You and [spouse] are getting divorced.', effects: { happiness: -25, money: -20000 }, condition: 'married', special: 'divorce', isPlayerDriven: true },
+  { id: 'affair_discovered',  stage: 'adult', minAge: 26, maxAge: 55, type: 'bad',       icon: '😱', message: '[spouse] discovered your affair. Everything is falling apart.', effects: { happiness: -30 }, condition: 'married', isPlayerDriven: true },
   { id: 'coworker_rivalry',   stage: 'adult', minAge: 22, maxAge: 55, type: 'bad',       icon: '😤', message: 'A coworker at [employer] is actively trying to sabotage your work.', effects: { happiness: -8 }, condition: 'employed' },
   { id: 'lawsuit',            minAge: 24, maxAge: 60, type: 'bad',  icon: '⚖️', message: 'Someone sued you. Legal bills are mounting fast.', effects: { happiness: -15, money: -25000 } },
   { id: 'inheritance',        minAge: 20, maxAge: 60, type: 'good', icon: '🏛️', message: 'A distant relative left you a substantial inheritance.', effects: { happiness: 10, money: 50000 } },
   { id: 'car_totaled',        minAge: 18, maxAge: 70, type: 'bad',  icon: '🚗', message: '[car] got totaled. At least you\'re okay.', effects: { happiness: -10, money: -8000, health: -5 } },
-  { id: 'startup_success',    stage: 'adult', minAge: 22, maxAge: 45, type: 'good', icon: '🚀', message: 'Your startup got acquired for a life-changing amount!', effects: { happiness: 30, money: 500000 }, requires: { smarts: 80 } },
-  { id: 'bankruptcy',         stage: 'adult', minAge: 26, maxAge: 60, type: 'bad',  icon: '📉', message: 'Your business failed and you had to declare bankruptcy.', effects: { happiness: -30, money: -50000 } },
+  { id: 'startup_success',    stage: 'adult', minAge: 22, maxAge: 45, type: 'good', icon: '🚀', message: 'Your startup got acquired for a life-changing amount!', effects: { happiness: 30, money: 500000 }, requires: { smarts: 80 }, isPlayerDriven: true },
+  { id: 'bankruptcy',         stage: 'adult', minAge: 26, maxAge: 60, type: 'bad',  icon: '📉', message: 'Your business failed and you had to declare bankruptcy.', effects: { happiness: -30, money: -50000 }, isPlayerDriven: true },
   { id: 'published_book',     minAge: 22, maxAge: 70, type: 'good', icon: '📚', message: 'You got a book published! It\'s selling really well.', effects: { happiness: 15, smarts: 5, money: 20000 }, requires: { smarts: 70 } },
 
   // ── MIDDLE AGE (46-65) ────────────────────────────────────────────────────
@@ -165,12 +165,12 @@ export const EVENTS = [
   { id: 'heart_attack_scare',  stage: 'midlife', minAge: 40, maxAge: 70, type: 'bad', icon: '❤️‍🩹', message: 'You had a heart attack scare. Tests came back okay, but it was terrifying.', effects: { health: -10, happiness: -8 } },
   { id: 'diabetes_diagnosis',  stage: 'midlife', minAge: 35, maxAge: 75, type: 'bad', icon: '💉', message: 'You were diagnosed with Type 2 diabetes.', effects: { health: -15, happiness: -10 }, special: 'add_condition' },
   { id: 'cancer_scare',        minAge: 35, maxAge: 80, type: 'bad',     icon: '🏥', message: 'A cancer scare sent you spiraling. Tests came back benign, thankfully.', effects: { health: -5, happiness: -15 } },
-  { id: 'laid_off',            stage: 'midlife', minAge: 40, maxAge: 62, type: 'bad', icon: '📦', message: 'The company downsized. After years at [employer], you were laid off.', effects: { happiness: -22 }, condition: 'employed', special: 'fire' },
+  { id: 'laid_off',            stage: 'midlife', minAge: 40, maxAge: 62, type: 'bad', icon: '📦', message: 'The company downsized. After years at [employer], you were laid off.', effects: { happiness: -22 }, condition: 'employed', special: 'fire', isPlayerDriven: true },
   { id: 'partner_sick',        minAge: 35, maxAge: 75, type: 'bad',     icon: '🏥', message: '[spouse] got seriously ill. You\'re both scared.', effects: { happiness: -18, money: -10000 }, condition: 'married' },
   { id: 'renewed_vows',        minAge: 40, maxAge: 70, type: 'good',    icon: '💍', message: 'You and [spouse] renewed your vows on your anniversary.', effects: { happiness: 15 }, condition: 'married' },
 
   // ── SENIOR (66-80) ───────────────────────────────────────────────────────
-  { id: 'retired',             stage: 'senior', minAge: 62, maxAge: 72, type: 'milestone', icon: '🏖️', message: 'You finally retired from [employer]! Time to actually enjoy life.', effects: { happiness: 20 }, condition: 'employed', special: 'retire' },
+  { id: 'retired',             stage: 'senior', minAge: 62, maxAge: 72, type: 'milestone', icon: '🏖️', message: 'You finally retired from [employer]! Time to actually enjoy life.', effects: { happiness: 20 }, condition: 'employed', special: 'retire', isPlayerDriven: true },
   { id: 'senior_dementia',     stage: 'senior', minAge: 70, maxAge: 90, type: 'bad', icon: '🧠', message: "You've been having more and more memory lapses.", effects: { health: -10, happiness: -12, smarts: -10 }, special: 'add_condition' },
   { id: 'hip_replacement',     stage: 'senior', minAge: 65, maxAge: 85, type: 'bad', icon: '🦴', message: 'You had a hip replacement surgery. Recovery was brutal.', effects: { health: -5, money: -20000 } },
   { id: 'travel_bucket_list',  stage: 'senior', minAge: 62, maxAge: 80, type: 'good', icon: '✈️', message: 'You finally took that dream trip around the world!', effects: { happiness: 18, money: -15000 } },
@@ -326,6 +326,14 @@ export const EVENTS = [
   { id: 'fitness_sponsorship', stage: 'youngAdult', minAge: 18, maxAge: 35, type: 'good', icon: '💪', requires: { health: 88 }, message: 'A fitness brand reached out about a sponsorship deal.', effects: { money: 15000, happiness: 12, health: 3 } },
 
   // ── CONSEQUENCE EVENTS ────────────────────────────────────────────────────
+  { id: 'neglect_fired', consequenceOf: 'job_neglect', minAge: 18, maxAge: 70, type: 'choice', icon: '😬', condition: 'employed',
+    message: 'Your boss at [employer] called you in. Your performance has been terrible. This is your last warning.',
+    choices: [
+      { text: 'Apologize and commit to improving', effects: { happiness: -5 }, result: 'Your boss gave you one more chance. Do not blow it.' },
+      { text: 'Quit on the spot (+happiness)',      effects: { happiness: 5 },  result: 'You walked out. Terrifying and freeing.', special: 'fire' },
+      { text: 'Argue back (-15 happiness)',         effects: { happiness: -15 },result: 'You were fired on the spot.', special: 'fire' },
+    ]
+  },
   { id: 'bad_grades_consequence', consequenceOf: 'skip_school', minAge: 11, maxAge: 18, type: 'bad', icon: '📉',
     message: 'Your grades have slipped badly because of all the classes you\'ve been skipping.', effects: { smarts: -8, happiness: -5 } },
   { id: 'addiction_followup', consequenceOf: 'drug_offer', minAge: 15, maxAge: 35, type: 'choice', icon: '💊',
@@ -404,6 +412,9 @@ export const getEventsForAge = (age, character) => {
       if (e.condition === 'hasPet'        && !character.hasPet) return false;
     }
 
+    // Player-driven events never fire randomly
+    if (e.isPlayerDriven) return false;
+
     // Stat gate checks
     if (e.requires) {
       for (const [stat, val] of Object.entries(e.requires)) {
@@ -439,6 +450,7 @@ export const getConsequenceEvents = (age, character) => {
     if (e.condition === 'married' && !character.relationships?.married) return false;
 
     // Check trigger conditions
+    if (e.consequenceOf === 'job_neglect'    && character.career?.employed && (character.career?.performance || 50) < 25) return true;
     if (e.consequenceOf === 'skip_school'    && recentChoiceTexts.some(t => t.includes('skip it'))) return true;
     if (e.consequenceOf === 'drug_offer'     && recentChoiceTexts.some(t => t.includes('try them'))) return true;
     if (e.consequenceOf === 'neglect_partner'&& character.relationships?.partner?.love < 30) return true;

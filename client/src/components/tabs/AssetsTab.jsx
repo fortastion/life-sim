@@ -94,7 +94,7 @@ export default function AssetsTab() {
   const netWorth = character.finances.cash + totalAssetValue + totalStockValue - totalDebt;
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto px-4 pt-3 pb-20">
+    <div className="flex flex-col h-full overflow-hidden">
 
       {/* ── Feedback Toast ───────────────────────────────────────────────── */}
       {feedback && (
@@ -108,6 +108,9 @@ export default function AssetsTab() {
           {feedback.msg}
         </motion.div>
       )}
+
+      {/* Scrollable content area */}
+      <div className="flex-1 overflow-y-auto px-4 pt-3 pb-20">
 
       <h2 className="font-bold text-white text-base mb-3">Assets & Wealth</h2>
 
@@ -193,65 +196,73 @@ export default function AssetsTab() {
             ))}
           </div>
 
-          {/* Shop panel */}
+          {/* Shop panel — fixed overlay so it doesn't squish layout above */}
           {activeShop && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-bg-card rounded-2xl border border-bg-border mb-4 overflow-hidden"
-            >
-              <div className="p-3 border-b border-bg-border flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-white">
-                  {CATEGORY_META[activeShop].icon} Buy {CATEGORY_META[activeShop].label}
-                </h3>
-                <button onClick={() => setActiveShop(null)} className="text-slate-400 text-xl tap-effect">✕</button>
-              </div>
-              <div className="p-3 flex flex-col gap-2">
-                {ASSETS_FOR_SALE[activeShop].map(item => {
-                  const has        = alreadyOwns(item.id);
-                  const affordable = canAfford(item.price);
-                  return (
-                    <div
-                      key={item.id}
-                      className={`flex items-center gap-3 p-3 rounded-xl border ${
-                        has ? 'border-green-800/40 bg-green-950/20' : 'border-bg-border bg-bg-secondary'
-                      }`}
-                    >
-                      <span className="text-2xl flex-shrink-0">{item.icon}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-white text-sm truncate">{item.name}</div>
-                        <div className="text-xs text-slate-400">{item.description}</div>
-                        {item.monthlyIncome > 0 && (
-                          <div className="text-xs text-green-400">
-                            +{formatMoney(item.monthlyIncome * 12, character.currency)}/yr passive
-                          </div>
-                        )}
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <div className="text-sm font-bold text-yellow-400">
-                          {formatMoney(item.price, character.currency)}
+            <>
+              {/* dark backdrop */}
+              <div
+                className="fixed inset-0 z-20 bg-black/40"
+                onClick={() => setActiveShop(null)}
+              />
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="fixed inset-x-4 top-28 z-30 bg-bg-card rounded-2xl border border-bg-border overflow-hidden shadow-2xl"
+                style={{ maxHeight: 'calc(100vh - 140px)' }}
+              >
+                <div className="p-3 border-b border-bg-border flex items-center justify-between flex-shrink-0">
+                  <h3 className="text-sm font-semibold text-white">
+                    {CATEGORY_META[activeShop].icon} Buy {CATEGORY_META[activeShop].label}
+                  </h3>
+                  <button onClick={() => setActiveShop(null)} className="text-slate-400 text-xl tap-effect">✕</button>
+                </div>
+                <div className="overflow-y-auto p-3 flex flex-col gap-2" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+                  {ASSETS_FOR_SALE[activeShop].map(item => {
+                    const has        = alreadyOwns(item.id);
+                    const affordable = canAfford(item.price);
+                    return (
+                      <div
+                        key={item.id}
+                        className={`flex items-center gap-3 p-3 rounded-xl border ${
+                          has ? 'border-green-800/40 bg-green-950/20' : 'border-bg-border bg-bg-secondary'
+                        }`}
+                      >
+                        <span className="text-2xl flex-shrink-0">{item.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-white text-sm truncate">{item.name}</div>
+                          <div className="text-xs text-slate-400">{item.description}</div>
+                          {item.monthlyIncome > 0 && (
+                            <div className="text-xs text-green-400">
+                              +{formatMoney(item.monthlyIncome * 12, character.currency)}/yr passive
+                            </div>
+                          )}
                         </div>
-                        {has ? (
-                          <span className="text-xs text-green-400">✓ Owned</span>
-                        ) : (
-                          <button
-                            onClick={() => { if (affordable) buyAsset(item); }}
-                            disabled={!affordable}
-                            className={`mt-1 text-xs px-3 py-1 rounded-lg font-semibold transition-all tap-effect ${
-                              affordable
-                                ? 'bg-purple-700/60 text-purple-200 border border-purple-600/40'
-                                : 'bg-bg-border text-slate-600 cursor-not-allowed'
-                            }`}
-                          >
-                            {affordable ? 'Buy' : "Can't Afford"}
-                          </button>
-                        )}
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-sm font-bold text-yellow-400">
+                            {formatMoney(item.price, character.currency)}
+                          </div>
+                          {has ? (
+                            <span className="text-xs text-green-400">✓ Owned</span>
+                          ) : (
+                            <button
+                              onClick={() => { if (affordable) { buyAsset(item); setActiveShop(null); } }}
+                              disabled={!affordable}
+                              className={`mt-1 text-xs px-3 py-1 rounded-lg font-semibold transition-all tap-effect ${
+                                affordable
+                                  ? 'bg-purple-700/60 text-purple-200 border border-purple-600/40'
+                                  : 'bg-bg-border text-slate-600 cursor-not-allowed'
+                              }`}
+                            >
+                              {affordable ? 'Buy' : "Can't Afford"}
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </motion.div>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            </>
           )}
 
           {/* Owned assets list */}
@@ -333,12 +344,12 @@ export default function AssetsTab() {
                   const cost  = s.shares * s.avgCost;
                   const gain  = val - cost;
                   const gainP = cost > 0 ? Math.round((gain / cost) * 100) : 0;
-                  const sellQ = sellStockShares[s.symbol] || '';
+                  const sellQ = sellStockShares[s.ticker] || '';
                   return (
-                    <div key={s.symbol} className="flex items-center gap-3 p-3 rounded-xl bg-bg-secondary border border-bg-border">
+                    <div key={s.ticker} className="flex items-center gap-3 p-3 rounded-xl bg-bg-secondary border border-bg-border">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-white">{s.symbol}</span>
+                          <span className="text-sm font-bold text-white">{s.ticker}</span>
                           <span className={`text-xs font-semibold ${gainP >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                             {gainP >= 0 ? '+' : ''}{gainP}%
                           </span>
@@ -353,14 +364,14 @@ export default function AssetsTab() {
                           max={s.shares}
                           placeholder="Qty"
                           value={sellQ}
-                          onChange={e => setSellStockShares(prev => ({ ...prev, [s.symbol]: e.target.value }))}
+                          onChange={e => setSellStockShares(prev => ({ ...prev, [s.ticker]: e.target.value }))}
                           className="w-16 text-xs text-center bg-bg-card border border-bg-border rounded-lg p-1 text-white"
                         />
                         <button
                           onClick={() => {
                             const q = parseInt(sellQ) || 1;
-                            act(sellStock, s.symbol, q);
-                            setSellStockShares(prev => ({ ...prev, [s.symbol]: '' }));
+                            act(sellStock, s.ticker, q);
+                            setSellStockShares(prev => ({ ...prev, [s.ticker]: '' }));
                           }}
                           className="text-xs px-3 py-1 rounded-lg bg-red-800/50 border border-red-700/40 text-red-300 tap-effect"
                         >
@@ -378,14 +389,14 @@ export default function AssetsTab() {
           <h3 className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">📊 Market</h3>
           <div className="flex flex-col gap-2">
             {STOCKS.map(s => {
-              const qty = stockShares[s.symbol] || '';
+              const qty = stockShares[s.ticker] || '';
               const cost = s.currentPrice * (parseInt(qty) || 0);
               const affordable = canAfford(cost) && cost > 0;
               return (
-                <div key={s.symbol} className="flex items-center gap-3 p-3 rounded-xl bg-bg-card border border-bg-border">
+                <div key={s.ticker} className="flex items-center gap-3 p-3 rounded-xl bg-bg-card border border-bg-border">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-white">{s.symbol}</span>
+                      <span className="text-sm font-bold text-white">{s.ticker}</span>
                       <span className="text-xs text-slate-400">{s.name}</span>
                     </div>
                     <div className="text-xs text-slate-400">
@@ -407,14 +418,14 @@ export default function AssetsTab() {
                       min="1"
                       placeholder="Qty"
                       value={qty}
-                      onChange={e => setStockShares(prev => ({ ...prev, [s.symbol]: e.target.value }))}
+                      onChange={e => setStockShares(prev => ({ ...prev, [s.ticker]: e.target.value }))}
                       className="w-16 text-xs text-center bg-bg-secondary border border-bg-border rounded-lg p-1 text-white"
                     />
                     <button
                       onClick={() => {
                         const q = parseInt(qty) || 1;
-                        act(buyStock, s.symbol, q);
-                        setStockShares(prev => ({ ...prev, [s.symbol]: '' }));
+                        act(buyStock, s.ticker, q);
+                        setStockShares(prev => ({ ...prev, [s.ticker]: '' }));
                       }}
                       disabled={!affordable}
                       className={`text-xs px-3 py-1 rounded-lg font-semibold tap-effect ${
@@ -666,6 +677,9 @@ export default function AssetsTab() {
           </div>
         </>
       )}
+
+      {/* end scrollable area */}
+      </div>
 
       {/* ── Sell Confirm Modal ───────────────────────────────────────────── */}
       {confirmSell && (

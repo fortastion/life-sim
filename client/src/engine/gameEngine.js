@@ -379,6 +379,25 @@ export function processAgeUp(character) {
       char.family.siblings = char.family.siblings.map(s => ({ ...s, age: s.age + 1 }));
     }
 
+    // Social media yearly drift + income
+    if (char.socialMedia?.accounts?.length > 0) {
+      char.socialMedia.accounts = char.socialMedia.accounts.map(acc => {
+        const posted = (acc.postsThisYear || 0) >= 3;
+        const viralRatio = acc.viralPosts / Math.max(acc.totalPosts, 1);
+        const driftMult = 0.85 + (acc.consistency / 100) * 0.2 + viralRatio * 0.15;
+        const newFollowers = Math.max(0, Math.floor((acc.followers || 0) * driftMult));
+        const newConsistency = posted
+          ? Math.max(0, (acc.consistency || 0) - 10)
+          : Math.max(0, (acc.consistency || 0) - 30);
+        const PLATFORM_DATA = { youtube: 2.5, tiktok: 0.8, instagram: 1.5, twitch: 3.5, x: 0.5 };
+        const adRate = PLATFORM_DATA[acc.platformId] || 1.0;
+        const monthlyIncome = Math.floor(newFollowers / 1000 * adRate);
+        char.finances.cash += monthlyIncome * 12;
+        return { ...acc, followers: newFollowers, consistency: newConsistency, monthlyIncome, postsThisYear: 0 };
+      });
+      char.socialMedia.totalFollowers = char.socialMedia.accounts.reduce((s, a) => s + (a.followers || 0), 0);
+    }
+
     // Net worth
     const totalAssets = (char.assets || []).reduce((s, a) => s + (a.currentValue || 0), 0);
     const totalStocks = (char.finances.stocks || []).reduce((s, x) => s + (x.shares * x.currentPrice), 0);
@@ -390,7 +409,24 @@ export function processAgeUp(character) {
     let yearEvents = [];
     try { yearEvents = generateYearEvents(char); } catch (e) { console.warn('event gen err:', e); }
     const autoEvents = yearEvents.filter(e => !e.choices || e.choices.length === 0);
-    const choiceEvents = yearEvents.filter(e => e.choices && e.choices.length > 0);
+    let choiceEvents = yearEvents.filter(e => e.choices && e.choices.length > 0);
+
+    // Burnout choice event injection
+    const BURNOUT_BY_TRACK = { medicine: 0.85, law: 0.75, finance: 0.70, nursing: 0.70, food: 0.65, tech: 0.55, military: 0.55, politics: 0.60 };
+    if (char.career?.employed && char.career?.trackId) {
+      const burnoutRisk = BURNOUT_BY_TRACK[char.career.trackId] || 0;
+      if (burnoutRisk > 0.5 && chance(burnoutRisk * 15)) {
+        choiceEvents.push({
+          id: uuidv4(), eventId: 'burnout_event', type: 'choice', icon: '🔥',
+          message: `The relentless grind at ${char.career.employer || 'work'} has left you completely burned out.`,
+          choices: [
+            { text: 'Take a sabbatical (-$10k, +health)', effects: { health: 15, happiness: 12, money: -10000 }, result: 'You took a few months off. You needed it badly.' },
+            { text: 'Push through (career stays)',        effects: { health: -10, happiness: -8 },               result: 'You kept going. Your body is protesting loudly.' },
+            { text: 'Therapy + reduce hours (-$3k)',      effects: { health: 8, happiness: 10, money: -3000 },   result: 'You set boundaries. Your boss was annoyed. You feel better.' },
+          ],
+        });
+      }
+    }
 
     autoEvents.forEach(e => {
       try { applyEventEffects(char, e, null); addToHistory(char, e); }
@@ -1855,23 +1891,75 @@ export function petAction(character, petId, action) {
 // FAME / SOCIAL MEDIA
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export function postSocialMedia(character) {
+export function postToSocialMedia(character, platformId, niche, postTypeId) {
   const char = JSON.parse(JSON.stringify(character));
-  if (!char.socialMedia) char.socialMedia = { platform: 'TikTok', followers: 0 };
-  if (!char.socialMedia.platform) char.socialMedia.platform = pick(['TikTok','Instagram','YouTube','Twitter']);
-  const looksFactor = char.stats.looks / 50;
-  const baseGrowth = rand(5, 50);
-  let growth = Math.floor(baseGrowth * looksFactor);
-  if (chance(8)) {
-    growth = rand(10000, 500000);
-    char.fame = Math.min(100, (char.fame || 0) + 10);
-    addToHistory(char, { type: 'good', icon: '🔥', message: `You went viral! +${growth.toLocaleString()} followers!` });
-  } else {
-    addToHistory(char, { type: 'neutral', icon: '📱', message: `Posted to ${char.socialMedia.platform}. +${growth} followers.` });
+  if (char.age < 13) return { character: char, result: 'fail', message: 'You are too young for social media.' };
+
+  if (!char.socialMedia) char.socialMedia = { accounts: [], totalFollowers: 0, fame: 0 };
+  if (!char.socialMedia.accounts) char.socialMedia.accounts = [];
+
+  // Platform data (inline to avoid import issues)
+  const PLATFORM_DATA = {
+    youtube:   { baseViralChance: 0.03, adRatePerK: 2.5, icon: '▶️'  },
+    tiktok:    { baseViralChance: 0.06, adRatePerK: 0.8, icon: '🎵'  },
+    instagram: { baseViralChance: 0.04, adRatePerK: 1.5, icon: '📸'  },
+    twitch:    { baseViralChance: 0.02, adRatePerK: 3.5, icon: '🎮'  },
+    x:         { baseViralChance: 0.05, adRatePerK: 0.5, icon: '✖️'  },
+  };
+  const POST_TYPE_DATA = {
+    quick:    { qualityMult: 0.6, followersPerK: 0.5  },
+    standard: { qualityMult: 1.0, followersPerK: 1.0  },
+    quality:  { qualityMult: 1.6, followersPerK: 2.0  },
+    collab:   { qualityMult: 2.2, followersPerK: 4.0  },
+  };
+
+  const platform = PLATFORM_DATA[platformId];
+  const postType = POST_TYPE_DATA[postTypeId || 'standard'];
+  if (!platform || !postType) return { character: char, result: 'fail', message: 'Invalid platform or post type.' };
+
+  // Find or create account
+  let account = char.socialMedia.accounts.find(a => a.platformId === platformId);
+  if (!account) {
+    account = { platformId, niche: niche || 'General', followers: 0, totalPosts: 0, viralPosts: 0, consistency: 0, monthlyIncome: 0, postsThisYear: 0 };
+    char.socialMedia.accounts.push(account);
   }
-  char.socialMedia.followers = (char.socialMedia.followers || 0) + growth;
-  if (char.socialMedia.followers > 100000) char.fame = Math.min(100, (char.fame || 0) + 1);
-  return { character: char, result: 'success', message: `+${growth.toLocaleString()} followers` };
+  if (niche) account.niche = niche;
+
+  // Quality score (0–1)
+  const quality = Math.min(1, (char.stats.smarts * 0.3 + char.stats.looks * 0.3 + char.stats.happiness * 0.2 + Math.random() * 20) / 100);
+
+  // Follower gain
+  let newFollowers = Math.floor(quality * postType.followersPerK * 1000 * postType.qualityMult * (1 + account.consistency * 0.01));
+  let viral = false;
+  if (Math.random() < platform.baseViralChance * quality * postType.qualityMult) {
+    newFollowers *= rand(10, 50);
+    viral = true;
+    account.viralPosts = (account.viralPosts || 0) + 1;
+    char.fame = Math.min(100, (char.fame || 0) + 5);
+  }
+
+  account.followers        = (account.followers || 0) + newFollowers;
+  account.totalPosts       = (account.totalPosts || 0) + 1;
+  account.postsThisYear    = (account.postsThisYear || 0) + 1;
+  account.consistency      = Math.min(100, (account.consistency || 0) + 2);
+  account.monthlyIncome    = Math.floor(account.followers / 1000 * platform.adRatePerK);
+
+  // Update total followers & fame
+  char.socialMedia.totalFollowers = char.socialMedia.accounts.reduce((s, a) => s + (a.followers || 0), 0);
+
+  const fmtN = (n) => n >= 1_000_000 ? `${(n/1_000_000).toFixed(1)}M` : n >= 1000 ? `${(n/1000).toFixed(1)}K` : `${n}`;
+  const msg = viral
+    ? `🔥 VIRAL on ${platformId}! +${fmtN(newFollowers)} followers!`
+    : `Posted to ${platformId}. +${fmtN(newFollowers)} followers.`;
+
+  addToHistory(char, { type: viral ? 'good' : 'neutral', icon: platform.icon, message: msg });
+
+  return { character: char, result: viral ? 'viral' : 'success', message: msg };
+}
+
+// Keep old name as alias for backwards compat
+export function postSocialMedia(character) {
+  return postToSocialMedia(character, 'tiktok', 'General', 'standard');
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
